@@ -22,7 +22,7 @@ def main() -> None:
     plt.plot(data['time'], data['q2'], label='q2 demonstration')
     plt.xlabel('Time [s]')
     plt.ylabel('Joint position [rad]')
-    plt.title('Demonstration trajectory for 2-DOF planar robot')
+    plt.title('Demonstration-Based Reference Trajectory for a 2-DOF Planar Robot')
     plt.grid(True, alpha=0.3)
     plt.legend()
     plt.tight_layout()
