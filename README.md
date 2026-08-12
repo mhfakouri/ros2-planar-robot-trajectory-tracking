@@ -1,47 +1,65 @@
 # ROS 2 Planar Robot Trajectory Tracking
 
-A compact ROS 2 project for demonstration-trajectory replay, joint-space feedback control, simulated 2-DOF robot dynamics, disturbance injection, CSV logging, and quantitative tracking-error analysis.
+A compact ROS 2 project for demonstration-trajectory replay, joint-space feedback control, simulated 2-DOF planar-robot dynamics, disturbance injection, CSV logging, and quantitative tracking analysis.
 
-The project is intentionally small and transparent. Its purpose is to demonstrate a complete ROS 2 control workflow rather than a high-fidelity robot or reinforcement-learning system.
+The project is intentionally small and transparent. Its purpose is to demonstrate a complete ROS 2 closed-loop control workflow rather than a high-fidelity robot, imitation-learning system, or reinforcement-learning controller.
 
 ## Highlights
 
 - ROS 2 Python nodes built with `rclpy`
 - Topic-based closed-loop control architecture
 - Demonstration trajectory replay from CSV
-- Joint-space PD control with torque saturation
-- 2-link horizontal planar robot dynamics
+- Joint-space PD feedback control with torque saturation
+- Simulated 2-link horizontal planar-robot dynamics
 - Stochastic and sinusoidal disturbance injection
 - Desired/actual state logging to CSV
-- Reproducible tracking-error plots and metrics
+- Reproducible tracking plots and error analysis
 - Launch-file configuration for disturbed and disturbance-free runs
+- Archived experimental results for reproducibility
 
-## Verified Tracking Results
+## Original Tuning Results
 
-The current controller tuning was evaluated with disturbance injection enabled. The recorded run includes the initial convergence transient and the subsequent repeated tracking motion.
+The repository includes an archived tracking run under:
 
-| Metric | Measured value |
-|---|---:|
-| Joint 1 RMSE | `0.03397 rad` |
-| Joint 2 RMSE | `0.06120 rad` |
-| Mean joint-error norm | `0.01873 rad` |
+[`results/original_tuning/`](results/original_tuning/)
 
-The run used the public default controller and disturbance settings documented below. The logger recorded 3,554 samples over approximately 71.08 s.
+This archive preserves the original controller-tuning experiment, including the raw CSV log and the plots generated from it. It is kept as a reproducible reference rather than presented as an optimized-performance result.
 
-The plotting script computes these values directly from the logged CSV:
+### Desired vs. actual joint trajectories
+
+![Desired vs. actual joint trajectories](results/original_tuning/desired_vs_actual.png)
+
+### Joint tracking error
+
+![Joint tracking error](results/original_tuning/tracking_error.png)
+
+### Archived data
+
+| File | Description |
+|---|---|
+| [`tracking_results.csv`](results/original_tuning/tracking_results.csv) | Logged desired states, actual states, joint errors, and error norm |
+| [`desired_vs_actual.png`](results/original_tuning/desired_vs_actual.png) | Desired and actual joint-position trajectories |
+| [`tracking_error.png`](results/original_tuning/tracking_error.png) | Joint-error histories and error norm |
+
+The CSV contains:
+
+```text
+time,desired_q1,desired_q2,actual_q1,actual_q2,error_q1,error_q2,error_norm
+```
+
+To regenerate the plots without overwriting the archived figures:
 
 ```bash
 python3 scripts/plot_tracking_results.py \
-  --csv /tmp/ros2_demo_tracking_log.csv
+  --csv results/original_tuning/tracking_results.csv \
+  --output-dir results/reproduced_original_tuning
 ```
 
-Generated plots:
+The plotting script also prints:
 
-```text
-results/demo_trajectory.png
-results/desired_vs_actual.png
-results/tracking_error.png
-```
+- RMSE for joint 1
+- RMSE for joint 2
+- mean joint-error norm
 
 ## System Architecture
 
@@ -79,25 +97,23 @@ results/tracking_error.png
 
 ### `demo_trajectory_publisher`
 
-Loads `config/demo_trajectory.csv` and publishes the desired joint positions and velocities.
+Loads `config/demo_trajectory.csv` and publishes desired joint positions and velocities.
 
-The trajectory file contains:
+The trajectory file uses:
 
 ```text
 time,q1,q2,q1_dot,q2_dot
 ```
 
-The included reference contains 2,000 points and is replayed at 100 Hz by default.
-
 ### `pd_controller`
 
-Subscribes to the desired and actual joint states and computes a saturated joint-space PD command:
+Subscribes to desired and actual joint states and computes a saturated joint-space PD command:
 
 ```text
 tau_i = Kp_i * (q_des_i - q_i) + Kd_i * (qdot_des_i - qdot_i)
 ```
 
-Current tested gains:
+Current documented gains:
 
 ```text
 Kp = [30.0, 12.0]
@@ -107,15 +123,15 @@ torque limit = +/-20.0 N.m
 
 ### `planar_robot_dynamics`
 
-Simulates a lightweight 2-link robot moving in the horizontal plane:
+Simulates a lightweight two-link robot moving in the horizontal plane:
 
 ```text
 M(q) q_ddot + C(q, q_dot) + B q_dot = tau + d
 ```
 
-where `d` is the injected disturbance. The dynamics are integrated with a semi-implicit Euler step.
+where `d` is the injected disturbance. The state is integrated numerically inside the ROS 2 simulation node.
 
-Default disturbance configuration:
+Default disturbance configuration documented by the project:
 
 ```text
 stochastic disturbance standard deviation = 0.15
@@ -131,7 +147,7 @@ Subscribes to desired and actual joint states and writes:
 time,desired_q1,desired_q2,actual_q1,actual_q2,error_q1,error_q2,error_norm
 ```
 
-The default output path is:
+The default runtime output is:
 
 ```text
 /tmp/ros2_demo_tracking_log.csv
@@ -161,6 +177,11 @@ ros2-planar-robot-trajectory-tracking/
 ├── launch/
 │   └── demo_tracking.launch.py
 ├── resource/
+├── results/
+│   └── original_tuning/
+│       ├── desired_vs_actual.png
+│       ├── tracking_error.png
+│       └── tracking_results.csv
 ├── ros2_demo_based_tracking/
 │   ├── __init__.py
 │   ├── demo_trajectory_publisher.py
@@ -179,7 +200,7 @@ ros2-planar-robot-trajectory-tracking/
 
 ## Requirements
 
-The verified workflow used ROS 2 Jazzy on Linux with Python 3.
+The project workflow is intended for ROS 2 on Linux with Python 3.
 
 ROS dependencies declared by the package include:
 
@@ -191,7 +212,7 @@ The plotting utilities use NumPy, pandas, and Matplotlib through `requirements.t
 
 ## Build
 
-Create a clean ROS 2 workspace and clone the repository:
+Create a ROS 2 workspace and clone the repository:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
@@ -201,7 +222,7 @@ cd ~/ros2_ws/src
 git clone https://github.com/mhfakouri/ros2-planar-robot-trajectory-tracking.git
 ```
 
-Install the plotting dependencies:
+Install plotting dependencies:
 
 ```bash
 python3 -m pip install -r \
@@ -263,13 +284,13 @@ Expected project topics include:
 /desired_joint_states
 ```
 
-A single desired-state message can be inspected with:
+Inspect a desired-state message with:
 
 ```bash
 ros2 topic echo /desired_joint_states --once
 ```
 
-## Plot the Results
+## Plot a New Run
 
 After collecting a run:
 
@@ -277,17 +298,18 @@ After collecting a run:
 cd ~/ros2_ws/src/ros2-planar-robot-trajectory-tracking
 
 python3 scripts/plot_tracking_results.py \
-  --csv /tmp/ros2_demo_tracking_log.csv
+  --csv /tmp/ros2_demo_tracking_log.csv \
+  --output-dir results/latest_run
 ```
 
-The script generates:
+This generates:
 
 ```text
-results/desired_vs_actual.png
-results/tracking_error.png
+results/latest_run/desired_vs_actual.png
+results/latest_run/tracking_error.png
 ```
 
-It also prints the joint RMSE values and the mean error norm.
+and prints the joint RMSE values and mean error norm.
 
 Plot the demonstration trajectory separately with:
 
@@ -320,17 +342,18 @@ This repository is a software and simulation portfolio project.
 - The robot is simulated; there is no physical-robot validation.
 - The controller is a conventional PD controller, not reinforcement learning.
 - The demonstration trajectory is used as a reference trajectory; this is not demonstration learning or imitation learning.
-- The dynamics model is intentionally compact and represents a horizontal 2-link manipulator.
-- The reported metrics describe the recorded simulated run under the stated disturbance configuration; they should not be interpreted as hardware-performance results.
+- The dynamics model is intentionally compact and represents a horizontal two-link manipulator.
+- The archived `original_tuning` results document one simulation experiment and should not be interpreted as hardware performance or as a claim of optimal controller tuning.
 
-These limitations are intentional. The repository focuses on ROS 2 software structure, closed-loop communication, simulation, logging, and reproducible control analysis.
+The project focuses on ROS 2 software structure, closed-loop communication, simulation, logging, disturbance testing, and reproducible control analysis.
 
 ## Possible Extensions
 
 Natural next steps include:
 
-- compare disturbed and disturbance-free runs quantitatively
-- log and visualize the control torque
+- compare original and improved controller tunings quantitatively
+- compare disturbed and disturbance-free runs
+- log and visualize control torque
 - add model-parameter uncertainty experiments
 - add Cartesian end-effector visualization
 - replace the compact plant with Gazebo, MuJoCo, or another higher-fidelity simulator
