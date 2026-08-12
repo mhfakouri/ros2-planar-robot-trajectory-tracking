@@ -64,8 +64,8 @@ def generate_launch_description():
                 output='screen',
                 parameters=[
                     {
-                        'kp': [35.0, 28.0],
-                        'kd': [7.0, 6.0],
+                        'kp': [30.0, 12.0],
+                        'kd': [5.0, 1.5],
                         'control_rate_hz': 100.0,
                         'torque_limit': 20.0,
                     }
