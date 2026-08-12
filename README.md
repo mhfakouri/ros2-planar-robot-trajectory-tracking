@@ -246,10 +246,6 @@ That extension would connect this simple project directly to residual reinforcem
 - Compare controller performance with and without disturbances
 - Publish end-effector position using `geometry_msgs`
 
-## CV / Website Description
-
-**ROS 2 Demonstration-Based Trajectory Tracking for a 2-DOF Planar Robot**  
-Developed a ROS 2 Python package for replaying demonstration trajectories, tracking them with a feedback controller, simulating 2-DOF planar robot dynamics, injecting disturbances, recording rosbag data, and plotting tracking errors. The project demonstrates ROS 2 nodes, topic-based communication, launch files, simulation, and data-analysis workflow for learning-based robot-control applications.
 
 ## Author
 
